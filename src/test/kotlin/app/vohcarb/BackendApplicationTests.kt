@@ -5,12 +5,14 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import kotlin.test.assertEquals
 
-@SpringBootTest(properties = ["spring.datasource.url=jdbc:h2:mem:vohcarb-test;MODE=MariaDB;DATABASE_TO_LOWER=TRUE"])
+@SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 class BackendApplicationTests(
     @Autowired private val mockMvc: MockMvc,
     @Autowired private val jdbc: JdbcTemplate,

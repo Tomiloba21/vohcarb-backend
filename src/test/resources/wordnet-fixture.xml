@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE LexicalResource SYSTEM "http://globalwordnet.github.io/schemas/WN-LMF-1.3.dtd">
+<LexicalResource xmlns:dc="https://globalwordnet.github.io/schemas/dc/">
+  <Lexicon id="oewn" label="Open English Wordnet" language="en" email="x@example.com"
+           license="https://creativecommons.org/licenses/by/4.0" version="test" url="https://example.com">
+    <LexicalEntry id="oewn-Canis-n">
+      <Lemma writtenForm="Canis" partOfSpeech="n"/>
+      <Sense id="oewn-canis__1" synset="oewn-001-n"/>
+    </LexicalEntry>
+    <LexicalEntry id="oewn-dog-n">
+      <Lemma writtenForm="dog" partOfSpeech="n">
+        <Pronunciation variety="GB">dɒɡ</Pronunciation>
+        <Pronunciation variety="US">dɔɡ</Pronunciation>
+      </Lemma>
+      <Sense id="oewn-dog__1" synset="oewn-001-n"/>
+      <Sense id="oewn-dog__2" synset="oewn-002-n"/>
+    </LexicalEntry>
+    <LexicalEntry id="oewn-dog-v">
+      <Lemma writtenForm="dog" partOfSpeech="v"/>
+      <Sense id="oewn-dog__3" synset="oewn-003-v"/>
+    </LexicalEntry>
+    <LexicalEntry id="oewn-domestic_dog-n">
+      <Lemma writtenForm="domestic dog" partOfSpeech="n"/>
+      <Sense id="oewn-domestic_dog__1" synset="oewn-001-n"/>
+    </LexicalEntry>
+    <LexicalEntry id="oewn-happy-a">
+      <Lemma writtenForm="happy" partOfSpeech="a">
+        <Pronunciation>ˈhæpi</Pronunciation>
+      </Lemma>
+      <Sense id="oewn-happy__1" synset="oewn-004-a"/>
+    </LexicalEntry>
+    <LexicalEntry id="oewn-joy-n">
+      <Lemma writtenForm="joy" partOfSpeech="n"/>
+      <Sense id="oewn-joy__1" synset="oewn-005-n"/>
+    </LexicalEntry>
+    <LexicalEntry id="oewn-o-ap-clock-r">
+      <Lemma writtenForm="o&apos;clock" partOfSpeech="r"/>
+      <Sense id="oewn-oclock__1" synset="oewn-006-r"/>
+    </LexicalEntry>
+    <LexicalEntry id="oewn-ox-n">
+      <Lemma writtenForm="ox" partOfSpeech="n"/>
+      <Sense id="oewn-ox__1" synset="oewn-007-n"/>
+    </LexicalEntry>
+    <LexicalEntry id="oewn-zzz-n">
+      <Lemma writtenForm="zzz" partOfSpeech="n"/>
+      <Sense id="oewn-zzz__1" synset="oewn-999-n"/>
+    </LexicalEntry>
+    <Synset id="oewn-001-n" members="oewn-dog-n oewn-domestic_dog-n oewn-Canis-n" partOfSpeech="n" lexfile="noun.animal">
+      <Definition>a member of the genus Canis that has been domesticated by man since prehistoric times</Definition>
+      <SynsetRelation relType="hypernym" target="oewn-008-n"/>
+    </Synset>
+    <Synset id="oewn-002-n" members="oewn-dog-n" partOfSpeech="n" lexfile="noun.person">
+      <Definition>informal term for a man</Definition>
+      <Example>you lucky dog</Example>
+    </Synset>
+    <Synset id="oewn-003-v" members="oewn-dog-v" partOfSpeech="v" lexfile="verb.motion">
+      <Definition>go after with the intent to catch</Definition>
+      <Example>The policeman chased the mugger down the alley</Example>
+      <Example>the dog chased the rabbit</Example>
+    </Synset>
+    <Synset id="oewn-004-a" members="oewn-happy-a" partOfSpeech="a" lexfile="adj.all">
+      <Definition>enjoying or showing or marked by joy or pleasure</Definition>
+      <Example dc:source="Robert Louis Stevenson">the world is so full of a number of things, I'm sure we should all be as happy as kings</Example>
+    </Synset>
+    <Synset id="oewn-005-n" members="oewn-joy-n" partOfSpeech="n" lexfile="noun.feeling">
+      <Definition>the emotion of great happiness</Definition>
+    </Synset>
+    <Synset id="oewn-006-r" members="oewn-o-ap-clock-r" partOfSpeech="r" lexfile="adv.all">
+      <Definition>according to the clock</Definition>
+      <Example>it's ten o'clock</Example>
+    </Synset>
+    <Synset id="oewn-007-n" members="oewn-ox-n" partOfSpeech="n" lexfile="noun.animal">
+      <Definition>an adult castrated bull</Definition>
+    </Synset>
+    <Synset id="oewn-999-n" members="oewn-zzz-n" partOfSpeech="n" lexfile="noun.state"/>
+  </Lexicon>
+</LexicalResource>
