@@ -5,6 +5,9 @@ The mobile app (Kotlin Multiplatform) lives in its own repository, `vohcarb-app`
 
 Kotlin + Spring Boot 4, Java 21.
 
+New here (or picking it up on another machine)? Start with **[docs/development.md](docs/development.md)**:
+decisions, conventions, known traps, status and what's next.
+
 ## Run
 
 Requirements: JDK 21. Gradle comes through the wrapper.
