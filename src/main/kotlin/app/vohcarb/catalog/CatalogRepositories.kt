@@ -10,6 +10,8 @@ interface WordRepository : JpaRepository<Word, Long>, JpaSpecificationExecutor<W
 
     fun findBySlug(slug: String): Word?
 
+    fun findAllBySlugIn(slugs: Collection<String>): List<Word>
+
     @Query("SELECT w.difficulty, COUNT(w) FROM Word w GROUP BY w.difficulty")
     fun countsByDifficulty(): List<Array<Any?>>
 }

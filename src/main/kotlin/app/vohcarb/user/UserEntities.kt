@@ -27,6 +27,8 @@ class AppUser(
     var email: String?,
     var displayName: String,
     val createdAt: Instant = now(),
+    /** Last revision handed out to this user's synced data; see ProgressService. */
+    var syncRevision: Long = 0,
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY) val id: Long? = null,
 )
 

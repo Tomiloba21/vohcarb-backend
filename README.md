@@ -70,10 +70,39 @@ Signed-in endpoints (send `Authorization: Bearer <accessToken>`):
 | `GET /api/v1/me` | The signed-in user |
 | `GET /api/v1/me/preferences` | Level range, words per day, timezone, categories, reminder times |
 | `PUT /api/v1/me/preferences` | Replace them (all fields) |
+| `GET /api/v1/me/feed?size=10` | Random words in your level range and categories that you haven't seen or marked known |
+| `PATCH /api/v1/me/words/{slug}` `{"saved": true}` | Set any of `seen`, `liked`, `saved`, `known` while online |
+| `GET /api/v1/me/words/{slug}` | Your flags for one word |
+| `GET /api/v1/me/words?list=saved` | Your `saved`, `liked`, `known` or `seen` words, most recent first |
+| `POST /api/v1/me/sync` | Offline sync (below) |
 
 To try them in Swagger UI: call dev-login, copy `accessToken`, click **Authorize** and paste it.
 
 Errors use the standard [problem details](https://www.rfc-editor.org/rfc/rfc9457) JSON format.
+
+## Offline sync
+
+The app keeps words and flags on the phone and syncs when it can:
+
+```json
+POST /api/v1/me/sync
+{ "sinceRevision": 41,
+  "changes": [ { "word": "ephemeral", "seen": true, "liked": false, "saved": true, "known": false,
+                 "changedAt": "2026-10-26T09:15:00Z" } ] }
+
+→ { "revision": 44, "hasMore": false, "changes": [ ...every word changed after revision 41... ], "unknownWords": [] }
+```
+
+- Every change gets the next number from a per-user **revision** counter. The app stores the `revision` it
+  got back and sends it as `sinceRevision` next time, so pulls never depend on phone clocks. If `hasMore`
+  is true, sync again straight away.
+- Each change carries the word's full flags and when the change happened on the phone. If two devices
+  change the same word, the **later change wins**. Times in the future are capped to the server's clock.
+- The feed only skips words once they're marked `seen`, so the app should report words as seen when
+  they're shown.
+
+While users have saved words, the WordNet import refuses to replace the catalog, because that would
+renumber the words.
 
 ## Sign-in
 
@@ -110,7 +139,7 @@ Write them in SQL that works on MariaDB, MySQL and H2.
 ## Project layout
 
 Code is organised by feature under `src/main/kotlin/app/vohcarb/`:
-`info/`, `catalog/` (with `catalog/importer/`), `auth/`, `user/`, then `progress/`, `practice/`, `social/`,
+`info/`, `catalog/` (with `catalog/importer/`), `auth/`, `user/`, `progress/`, then `practice/`, `social/`,
 `notify/` as they are built.
 
 ## License

@@ -36,7 +36,10 @@ class WordNetImporter(private val jdbc: JdbcTemplate) {
         val existing = jdbc.queryForObject("SELECT COUNT(*) FROM word", Long::class.java) ?: 0
         if (existing > 0) {
             check(replace) { "Catalog already has $existing words; run with vohcarb.import.replace=true to replace it" }
-            // TODO: once user progress references words, switch to upserting by slug instead of wiping.
+            // Wiping renumbers every word, which would point users' saved words at the wrong ones.
+            // TODO: keep word ids stable by slug so the catalog can be refreshed once people are using it.
+            val userWords = jdbc.queryForObject("SELECT COUNT(*) FROM user_word", Long::class.java) ?: 0
+            check(userWords == 0L) { "Can't replace the catalog: $userWords user word records refer to it" }
             for (table in listOf("example", "sense", "pronunciation", "word_category", "word")) {
                 jdbc.update("DELETE FROM $table")
             }

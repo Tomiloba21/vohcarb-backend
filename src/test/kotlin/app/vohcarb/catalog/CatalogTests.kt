@@ -10,6 +10,7 @@ import org.junit.jupiter.api.TestInstance
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
@@ -24,6 +25,7 @@ class CatalogTests(
     @Autowired private val mockMvc: MockMvc,
     @Autowired private val importer: WordNetImporter,
     @Autowired private val frequencyImporter: FrequencyImporter,
+    @Autowired private val jdbc: JdbcTemplate,
 ) {
 
     private lateinit var stats: ImportStats
@@ -31,6 +33,7 @@ class CatalogTests(
 
     @BeforeAll
     fun importFixture() {
+        jdbc.update("DELETE FROM user_word") // left by other test classes sharing this database
         stats = fixture().use { importer.importStream(it, replace = true) }
         levelCounts = javaClass.getResourceAsStream("/frequency-fixture.txt")!!.use { frequencyImporter.importStream(it) }
     }
