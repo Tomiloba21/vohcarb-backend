@@ -33,6 +33,7 @@ class Word(
     val lemma: String,
     val slug: String,
     val difficulty: Short?,
+    val frequencyRank: Int?,
     val source: String,
 
     @OneToMany(mappedBy = "word", fetch = FetchType.LAZY)

@@ -1,0 +1,5 @@
+the 1000
+dog 900
+Dog 850
+joy 800
+happy 700

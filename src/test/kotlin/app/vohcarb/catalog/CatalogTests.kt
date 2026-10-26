@@ -1,5 +1,6 @@
 package app.vohcarb.catalog
 
+import app.vohcarb.catalog.importer.FrequencyImporter
 import app.vohcarb.catalog.importer.ImportStats
 import app.vohcarb.catalog.importer.WordNetImporter
 import org.hamcrest.Matchers.contains
@@ -22,13 +23,16 @@ import kotlin.test.assertFailsWith
 class CatalogTests(
     @Autowired private val mockMvc: MockMvc,
     @Autowired private val importer: WordNetImporter,
+    @Autowired private val frequencyImporter: FrequencyImporter,
 ) {
 
     private lateinit var stats: ImportStats
+    private lateinit var levelCounts: Map<Difficulty, Int>
 
     @BeforeAll
     fun importFixture() {
         stats = fixture().use { importer.importStream(it, replace = true) }
+        levelCounts = javaClass.getResourceAsStream("/frequency-fixture.txt")!!.use { frequencyImporter.importStream(it) }
     }
 
     private fun fixture() = javaClass.getResourceAsStream("/wordnet-fixture.xml")!!
@@ -127,5 +131,45 @@ class CatalogTests(
             status { isOk() }
             jsonPath("$.paths['/api/v1/words/{slug}']") { exists() }
         }
+    }
+
+    @Test
+    fun `frequency import ranks catalog words and marks the rest rare`() {
+        // dog, joy, happy are in the list (the first "Dog" line wins); o'clock is not.
+        assertEquals(mapOf(Difficulty.EVERYDAY to 3, Difficulty.RARE to 1), levelCounts)
+        mockMvc.get("/api/v1/words/dog").andExpect { jsonPath("$.difficulty") { value(1) } }
+        mockMvc.get("/api/v1/words/oclock").andExpect { jsonPath("$.difficulty") { value(5) } }
+    }
+
+    @Test
+    fun `levels report word counts`() {
+        mockMvc.get("/api/v1/levels").andExpect {
+            status { isOk() }
+            jsonPath("$[*].level") { value(contains(1, 2, 3, 4, 5)) }
+            jsonPath("$[0].name") { value("Everyday") }
+            jsonPath("$[*].wordCount") { value(contains(3, 0, 0, 0, 1)) }
+        }
+    }
+
+    @Test
+    fun `filters combine prefix, category and difficulty`() {
+        mockMvc.get("/api/v1/words?difficulty=5").andExpect {
+            jsonPath("$.items[*].slug") { value(contains("oclock")) }
+        }
+        mockMvc.get("/api/v1/words?difficulty=1&category=feelings").andExpect {
+            jsonPath("$.items[*].slug") { value(contains("joy")) }
+        }
+        mockMvc.get("/api/v1/words?difficulty=1&q=h").andExpect {
+            jsonPath("$.items[*].slug") { value(contains("happy")) }
+        }
+        mockMvc.get("/api/v1/random-word?difficulty=5").andExpect {
+            jsonPath("$.slug") { value("oclock") }
+        }
+        mockMvc.get("/api/v1/random-word?difficulty=3").andExpect { status { isNotFound() } }
+    }
+
+    @Test
+    fun `out of range difficulty is a bad request`() {
+        mockMvc.get("/api/v1/words?difficulty=9").andExpect { status { isBadRequest() } }
     }
 }

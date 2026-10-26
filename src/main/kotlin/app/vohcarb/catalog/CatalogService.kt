@@ -22,42 +22,35 @@ class CatalogService(
         }
     }
 
+    fun listLevels(): List<LevelDto> {
+        val counts = words.countsByDifficulty().associate { (level, count) -> (level as Number?)?.toInt() to (count as Number).toLong() }
+        return Difficulty.entries.map { LevelDto(it.level, it.title, it.description, counts[it.level] ?: 0) }
+    }
+
     fun getWord(slug: String): WordDetailDto =
         words.findBySlug(slug)?.toDetail() ?: throw notFound("word '$slug'")
 
-    fun searchWords(query: String?, category: String?, page: Int, size: Int): PageResponse<WordSummaryDto> {
-        val prefix = query?.trim()?.lowercase().orEmpty()
-        val pageable = PageRequest.of(page, size, Sort.by("lemma"))
-        val result = if (category == null) {
-            words.findByLemmaStartingWith(prefix, pageable)
-        } else {
-            requireCategory(category)
-            words.findByCategoryAndLemmaPrefix(category, prefix, pageable)
-        }
+    fun searchWords(filter: WordFilter, page: Int, size: Int): PageResponse<WordSummaryDto> {
+        val result = words.findAll(validated(filter).toSpecification(), PageRequest.of(page, size, Sort.by("lemma")))
         return PageResponse.of(result) { it.toSummary() }
     }
 
-    fun randomWord(category: String?, random: Random = Random.Default): WordDetailDto {
-        val total = if (category == null) {
-            words.count()
-        } else {
-            requireCategory(category)
-            words.findByCategoryAndLemmaPrefix(category, "", PageRequest.of(0, 1)).totalElements
-        }
+    fun randomWord(filter: WordFilter, random: Random = Random.Default): WordDetailDto {
+        val spec = validated(filter).toSpecification()
+        val total = words.count(spec)
         if (total == 0L) throw notFound("words")
 
         // Page size 1, so the page number is the row offset.
         val pick = PageRequest.of(random.nextLong(total).toInt(), 1, Sort.by("id"))
-        val word = if (category == null) {
-            words.findAll(pick).content.first()
-        } else {
-            words.findByCategoryAndLemmaPrefix(category, "", pick).content.first()
-        }
-        return word.toDetail()
+        return words.findAll(spec, pick).content.first().toDetail()
     }
 
-    private fun requireCategory(slug: String) {
-        categories.findBySlug(slug) ?: throw notFound("category '$slug'")
+    private fun validated(filter: WordFilter): WordFilter {
+        filter.category?.let { categories.findBySlug(it) ?: throw notFound("category '$it'") }
+        filter.difficulty?.let {
+            Difficulty.of(it) ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Difficulty must be 1 to ${Difficulty.entries.size}")
+        }
+        return filter.copy(prefix = filter.prefix?.trim()?.lowercase())
     }
 
     private fun notFound(what: String) = ResponseStatusException(HttpStatus.NOT_FOUND, "No $what found")

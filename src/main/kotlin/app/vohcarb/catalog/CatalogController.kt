@@ -1,6 +1,7 @@
 package app.vohcarb.catalog
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
@@ -19,18 +20,26 @@ class CatalogController(private val catalog: CatalogService) {
     @Operation(summary = "List all categories with how many words each has")
     fun categories(): List<CategoryDto> = catalog.listCategories()
 
+    @GetMapping("/levels")
+    @Operation(summary = "List difficulty levels (1 = everyday … 5 = rare) with how many words each has")
+    fun levels(): List<LevelDto> = catalog.listLevels()
+
     @GetMapping("/words")
-    @Operation(summary = "Browse or search words by prefix, optionally within a category")
+    @Operation(summary = "Browse or search words by prefix, optionally within a category and/or level")
     fun words(
         @RequestParam(required = false) q: String?,
         @RequestParam(required = false) category: String?,
+        @Parameter(description = "1 (everyday) to 5 (rare)") @RequestParam(required = false) difficulty: Int?,
         @RequestParam(defaultValue = "0") @Min(0) page: Int,
         @RequestParam(defaultValue = "20") @Min(1) @Max(100) size: Int,
-    ): PageResponse<WordSummaryDto> = catalog.searchWords(q, category, page, size)
+    ): PageResponse<WordSummaryDto> = catalog.searchWords(WordFilter(q, category, difficulty), page, size)
 
     @GetMapping("/random-word")
-    @Operation(summary = "A random word with full details, optionally from a category")
-    fun randomWord(@RequestParam(required = false) category: String?): WordDetailDto = catalog.randomWord(category)
+    @Operation(summary = "A random word with full details, optionally from a category and/or level")
+    fun randomWord(
+        @RequestParam(required = false) category: String?,
+        @Parameter(description = "1 (everyday) to 5 (rare)") @RequestParam(required = false) difficulty: Int?,
+    ): WordDetailDto = catalog.randomWord(WordFilter(category = category, difficulty = difficulty))
 
     @GetMapping("/words/{slug}")
     @Operation(summary = "One word with pronunciations, senses and examples")

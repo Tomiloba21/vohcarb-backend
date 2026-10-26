@@ -6,6 +6,8 @@ data class CategoryDto(val slug: String, val name: String, val description: Stri
 
 data class CategoryRef(val slug: String, val name: String)
 
+data class LevelDto(val level: Int, val name: String, val description: String, val wordCount: Long)
+
 data class PronunciationDto(val ipa: String, val variety: String?)
 
 data class ExampleDto(val sentence: String, val source: String?)

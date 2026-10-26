@@ -1,21 +1,17 @@
 package app.vohcarb.catalog
 
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.Pageable
+import jakarta.persistence.criteria.JoinType
+import org.springframework.data.jpa.domain.Specification
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.jpa.repository.Query
 
-interface WordRepository : JpaRepository<Word, Long> {
+interface WordRepository : JpaRepository<Word, Long>, JpaSpecificationExecutor<Word> {
 
     fun findBySlug(slug: String): Word?
 
-    fun findByLemmaStartingWith(prefix: String, pageable: Pageable): Page<Word>
-
-    @Query(
-        "SELECT w FROM Word w JOIN w.categories c WHERE c.slug = :category AND w.lemma LIKE CONCAT(:prefix, '%')",
-        countQuery = "SELECT COUNT(w) FROM Word w JOIN w.categories c WHERE c.slug = :category AND w.lemma LIKE CONCAT(:prefix, '%')",
-    )
-    fun findByCategoryAndLemmaPrefix(category: String, prefix: String, pageable: Pageable): Page<Word>
+    @Query("SELECT w.difficulty, COUNT(w) FROM Word w GROUP BY w.difficulty")
+    fun countsByDifficulty(): List<Array<Any?>>
 }
 
 interface CategoryRepository : JpaRepository<Category, Long> {
@@ -27,4 +23,23 @@ interface CategoryRepository : JpaRepository<Category, Long> {
         nativeQuery = true,
     )
     fun wordCountsBySlug(): List<Array<Any>>
+}
+
+/** Optional word filters; null means "don't filter on this". */
+data class WordFilter(val prefix: String? = null, val category: String? = null, val difficulty: Int? = null) {
+
+    fun toSpecification(): Specification<Word> {
+        val parts = listOfNotNull(
+            prefix?.takeIf { it.isNotEmpty() }?.let { p ->
+                Specification<Word> { root, _, cb -> cb.like(root.get("lemma"), "$p%") }
+            },
+            category?.let { slug ->
+                Specification<Word> { root, _, cb -> cb.equal(root.join<Word, Category>("categories", JoinType.INNER).get<String>("slug"), slug) }
+            },
+            difficulty?.let { level ->
+                Specification<Word> { root, _, cb -> cb.equal(root.get<Short>("difficulty"), level.toShort()) }
+            },
+        )
+        return Specification.allOf(parts)
+    }
 }
