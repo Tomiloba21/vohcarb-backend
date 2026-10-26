@@ -1,3 +1,7 @@
 spring:
   datasource:
     url: jdbc:h2:mem:vohcarb-test;MODE=MariaDB;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1
+vohcarb:
+  auth:
+    jwt-secret: test-only-secret-never-use-in-production-0000
+    dev-login-enabled: true

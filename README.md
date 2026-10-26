@@ -15,7 +15,8 @@ Requirements: JDK 21. Gradle comes through the wrapper.
 ```
 
 By default it uses an embedded **H2 database in MariaDB mode**, stored in `data/`,
-so you don't have to install anything.
+so you don't have to install anything. `bootRun` starts with the **`dev` profile**: dev login is on and
+tokens are signed with a throwaway key.
 
 - `/swagger-ui.html`: interactive API docs (spec at `/v3/api-docs`, use it to generate the app's client)
 - `/h2-console`: browse the local database (JDBC URL `jdbc:h2:file:./data/vohcarb`, user `sa`)
@@ -61,7 +62,31 @@ import after it. Add `--vohcarb.import.replace=true` to re-import WordNet over a
 | `GET /api/v1/info` | App name and API version |
 | `GET /actuator/health` | Health check |
 
+Signed-in endpoints (send `Authorization: Bearer <accessToken>`):
+
+| Endpoint | What it does |
+|---|---|
+| `POST /api/v1/auth/dev-login` `{"email": "...", "displayName": "..."}` | **Dev only.** Signs in as any email, creating the user on first use; returns `accessToken` |
+| `GET /api/v1/me` | The signed-in user |
+| `GET /api/v1/me/preferences` | Level range, words per day, timezone, categories, reminder times |
+| `PUT /api/v1/me/preferences` | Replace them (all fields) |
+
+To try them in Swagger UI: call dev-login, copy `accessToken`, click **Authorize** and paste it.
+
 Errors use the standard [problem details](https://www.rfc-editor.org/rfc/rfc9457) JSON format.
+
+## Sign-in
+
+Every sign-in method ends in the same place: the backend issues **its own** JWT (HS256, 30 days), and
+everything else only reads the user id from it. Dev login exists so the app can be built before
+**Google Sign-In** (planned: `POST /api/v1/auth/google`, which verifies Google's ID token and links by email).
+
+| Profile | Dev login | Token signing key |
+|---|---|---|
+| `dev` (default for `bootRun`) | on | built-in throwaway key |
+| anything else, e.g. production | **off** | `JWT_SECRET` env var (≥ 32 chars). Startup fails without it |
+
+Generate a production secret with `openssl rand -base64 48`.
 
 ## Using MariaDB / MySQL instead
 
@@ -76,7 +101,7 @@ GRANT ALL PRIVILEGES ON vohcarb.* TO 'vohcarb'@'localhost';
 Then run with the `mariadb` profile:
 
 ```bash
-SPRING_PROFILES_ACTIVE=mariadb DB_PASSWORD=change-me ./gradlew bootRun
+SPRING_PROFILES_ACTIVE=dev,mariadb DB_PASSWORD=change-me ./gradlew bootRun
 ```
 
 Schema changes go through Flyway migrations in `src/main/resources/db/migration`.
@@ -85,7 +110,7 @@ Write them in SQL that works on MariaDB, MySQL and H2.
 ## Project layout
 
 Code is organised by feature under `src/main/kotlin/app/vohcarb/`:
-`info/`, `catalog/` (with `catalog/importer/`), then `auth/`, `user/`, `progress/`, `practice/`, `social/`,
+`info/`, `catalog/` (with `catalog/importer/`), `auth/`, `user/`, then `progress/`, `practice/`, `social/`,
 `notify/` as they are built.
 
 ## License

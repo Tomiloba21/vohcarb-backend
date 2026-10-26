@@ -25,6 +25,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-flyway")
+	implementation("org.springframework.boot:spring-boot-starter-security-oauth2-resource-server")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
 	implementation("org.flywaydb:flyway-mysql")
@@ -36,6 +37,7 @@ dependencies {
 	testImplementation("org.springframework.boot:spring-boot-starter-actuator-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-flyway-test")
+	testImplementation("org.springframework.boot:spring-boot-starter-security-oauth2-resource-server-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-validation-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
@@ -52,6 +54,11 @@ allOpen {
 	annotation("jakarta.persistence.Entity")
 	annotation("jakarta.persistence.MappedSuperclass")
 	annotation("jakarta.persistence.Embeddable")
+}
+
+// `./gradlew bootRun` uses the dev profile (dev login, throwaway JWT secret) unless another profile is set.
+tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+	systemProperty("spring.profiles.default", "dev")
 }
 
 tasks.withType<Test> {
