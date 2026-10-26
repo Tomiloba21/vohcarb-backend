@@ -101,7 +101,7 @@ class ProgressTests(
         val token = newUser()
         feed(token).slugs() // defaults are levels 2–4, and the fixture only has levels 1 and 5
         preferences(token, 1, 5)
-        feed(token).slugs("dog", "happy", "joy", "oclock")
+        feed(token).slugs("dog", "happy", "joy", "oclock") // never zonk: it's sensitive
         preferences(token, 5, 5)
         feed(token).slugs("oclock")
         preferences(token, 1, 5, listOf("feelings", "movement"))

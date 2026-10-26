@@ -75,6 +75,9 @@ Signed-in endpoints (send `Authorization: Bearer <accessToken>`):
 | `GET /api/v1/me/words/{slug}` | Your flags for one word |
 | `GET /api/v1/me/words?list=saved` | Your `saved`, `liked`, `known` or `seen` words, most recent first |
 | `POST /api/v1/me/sync` | Offline sync (below) |
+| `GET /api/v1/me/practice/session?size=10` | Saved words to practise now (due reviews first, then new), each with a quiz question |
+| `POST /api/v1/me/practice/reviews` | Record answers: `AGAIN`, `HARD`, `GOOD` or `EASY` (below) |
+| `GET /api/v1/me/practice/stats` | Reviews due, new words, total cards, reviews today, streak |
 
 To try them in Swagger UI: call dev-login, copy `accessToken`, click **Authorize** and paste it.
 
@@ -101,8 +104,32 @@ POST /api/v1/me/sync
 - The feed only skips words once they're marked `seen`, so the app should report words as seen when
   they're shown.
 
-While users have saved words, the WordNet import refuses to replace the catalog, because that would
-renumber the words.
+While users have saved words or reviews, the WordNet import refuses to replace the catalog, because that
+would renumber the words.
+
+## Practice (spaced repetition)
+
+Saved words become flashcards scheduled with **SM-2** (the SuperMemo/Anki algorithm), in
+[`Scheduler.kt`](src/main/kotlin/app/vohcarb/practice/srs/Scheduler.kt). It's plain Kotlin with no dependencies,
+so the app can copy it and schedule reviews offline exactly like the server.
+
+| Answer | Next review |
+|---|---|
+| `AGAIN` | in 10 minutes; the word starts over |
+| `HARD` | a little later than last time; the word gets harder |
+| `GOOD` | 1 day, then 3, then about × 2.5 each time (8, 20, 50…) |
+| `EASY` | 4 days at first, then faster growth; the word gets easier |
+
+Each session item carries a multiple-choice question: *what does this word mean?* or *which word means
+this?* (with the word blanked out of its own definition). Wrong answers are other words of the same part of
+speech and a similar level. The correct answer is included, so the app can grade offline. Answers are
+uploaded with the time they happened (`reviewedAt`): re-sending the same answer is harmless, and answers
+older than the card's last review only count towards stats. Streaks use the timezone from your preferences.
+
+## Sensitive words
+
+About 120 words have a sense WordNet labels as a slur or obscenity (`SensitiveWords.kt`). They stay in
+search and word lookups, but are never picked for you: not in the feed, the random word or quiz options.
 
 ## Sign-in
 
@@ -139,7 +166,7 @@ Write them in SQL that works on MariaDB, MySQL and H2.
 ## Project layout
 
 Code is organised by feature under `src/main/kotlin/app/vohcarb/`:
-`info/`, `catalog/` (with `catalog/importer/`), `auth/`, `user/`, `progress/`, then `practice/`, `social/`,
+`info/`, `catalog/` (with `catalog/importer/`), `auth/`, `user/`, `progress/`, `practice/`, then `social/`,
 `notify/` as they are built.
 
 ## License

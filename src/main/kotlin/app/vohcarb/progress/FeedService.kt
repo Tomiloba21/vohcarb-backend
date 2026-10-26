@@ -18,9 +18,9 @@ class FeedService(
 ) {
 
     /**
-     * Random words for the user's feed: within their level range and categories, skipping words they have
-     * already seen or marked as known. Words stay in the feed until the app reports them as seen, so fetching
-     * again before that returns new random picks from the same pool.
+     * Random words for the user's feed: within their level range and categories, skipping sensitive words and
+     * words they have already seen or marked as known. Words stay in the feed until the app reports them as seen,
+     * so fetching again before that returns new random picks from the same pool.
      */
     fun feed(userId: Long, size: Int?): List<WordDetailDto> {
         val prefs = preferences.findById(userId).orElseGet { UserPreferences(userId = userId) }
@@ -29,7 +29,8 @@ class FeedService(
         val query = em.createQuery(
             """
             SELECT w FROM Word w
-            WHERE COALESCE(w.difficulty, :rare) BETWEEN :min AND :max
+            WHERE w.sensitive = FALSE
+              AND COALESCE(w.difficulty, :rare) BETWEEN :min AND :max
               AND (:allCategories = TRUE OR EXISTS (
                     SELECT 1 FROM Word w2 JOIN w2.categories c WHERE w2 = w AND c.id IN :categoryIds))
               AND NOT EXISTS (

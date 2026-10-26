@@ -41,6 +41,10 @@
       <Lemma writtenForm="ox" partOfSpeech="n"/>
       <Sense id="oewn-ox__1" synset="oewn-007-n"/>
     </LexicalEntry>
+    <LexicalEntry id="oewn-zonk-n">
+      <Lemma writtenForm="zonk" partOfSpeech="n"/>
+      <Sense id="oewn-zonk__1" synset="oewn-010-n"/>
+    </LexicalEntry>
     <LexicalEntry id="oewn-zzz-n">
       <Lemma writtenForm="zzz" partOfSpeech="n"/>
       <Sense id="oewn-zzz__1" synset="oewn-999-n"/>
@@ -71,6 +75,9 @@
     </Synset>
     <Synset id="oewn-007-n" members="oewn-ox-n" partOfSpeech="n" lexfile="noun.animal">
       <Definition>an adult castrated bull</Definition>
+    </Synset>
+    <Synset id="oewn-010-n" members="oewn-zonk-n" partOfSpeech="n" lexfile="noun.communication">
+      <Definition>vulgar term for nonsense</Definition>
     </Synset>
     <Synset id="oewn-999-n" members="oewn-zzz-n" partOfSpeech="n" lexfile="noun.state"/>
   </Lexicon>

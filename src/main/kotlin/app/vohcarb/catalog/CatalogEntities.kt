@@ -35,6 +35,8 @@ class Word(
     val difficulty: Short?,
     val frequencyRank: Int?,
     val source: String,
+    /** Has a slur or obscene sense; never picked for the user. See [SensitiveWords]. */
+    val sensitive: Boolean,
 
     @OneToMany(mappedBy = "word", fetch = FetchType.LAZY)
     @OrderBy("sortOrder")

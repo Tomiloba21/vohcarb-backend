@@ -39,7 +39,7 @@ class CatalogController(private val catalog: CatalogService) {
     fun randomWord(
         @RequestParam(required = false) category: String?,
         @Parameter(description = "1 (everyday) to 5 (rare)") @RequestParam(required = false) difficulty: Int?,
-    ): WordDetailDto = catalog.randomWord(WordFilter(category = category, difficulty = difficulty))
+    ): WordDetailDto = catalog.randomWord(WordFilter(category = category, difficulty = difficulty, excludeSensitive = true))
 
     @GetMapping("/words/{slug}")
     @Operation(summary = "One word with pronunciations, senses and examples")

@@ -33,7 +33,8 @@ class CatalogTests(
 
     @BeforeAll
     fun importFixture() {
-        jdbc.update("DELETE FROM user_word") // left by other test classes sharing this database
+        // Left by other test classes sharing this database
+        for (table in listOf("review_log", "review_card", "user_word")) jdbc.update("DELETE FROM $table")
         stats = fixture().use { importer.importStream(it, replace = true) }
         levelCounts = javaClass.getResourceAsStream("/frequency-fixture.txt")!!.use { frequencyImporter.importStream(it) }
     }
@@ -42,8 +43,8 @@ class CatalogTests(
 
     @Test
     fun `import keeps single lowercase words and joins senses from synsets`() {
-        // dog, happy, joy, o'clock. Not: Canis (proper noun), domestic dog (phrase), ox (too short), zzz (no definition)
-        assertEquals(ImportStats(words = 4, senses = 6, examples = 5, pronunciations = 3), stats)
+        // dog, happy, joy, o'clock, zonk. Not: Canis (proper noun), domestic dog (phrase), ox (too short), zzz (no definition)
+        assertEquals(ImportStats(words = 5, senses = 7, examples = 5, pronunciations = 3), stats)
     }
 
     @Test
@@ -100,7 +101,7 @@ class CatalogTests(
         }
         mockMvc.get("/api/v1/words?page=0&size=2").andExpect {
             jsonPath("$.items[*].slug") { value(contains("dog", "happy")) }
-            jsonPath("$.totalPages") { value(2) }
+            jsonPath("$.totalPages") { value(3) }
         }
     }
 
@@ -138,8 +139,8 @@ class CatalogTests(
 
     @Test
     fun `frequency import ranks catalog words and marks the rest rare`() {
-        // dog, joy, happy are in the list (the first "Dog" line wins); o'clock is not.
-        assertEquals(mapOf(Difficulty.EVERYDAY to 3, Difficulty.RARE to 1), levelCounts)
+        // dog, joy, happy are in the list (the first "Dog" line wins); o'clock and zonk are not.
+        assertEquals(mapOf(Difficulty.EVERYDAY to 3, Difficulty.RARE to 2), levelCounts)
         mockMvc.get("/api/v1/words/dog").andExpect { jsonPath("$.difficulty") { value(1) } }
         mockMvc.get("/api/v1/words/oclock").andExpect { jsonPath("$.difficulty") { value(5) } }
     }
@@ -150,14 +151,14 @@ class CatalogTests(
             status { isOk() }
             jsonPath("$[*].level") { value(contains(1, 2, 3, 4, 5)) }
             jsonPath("$[0].name") { value("Everyday") }
-            jsonPath("$[*].wordCount") { value(contains(3, 0, 0, 0, 1)) }
+            jsonPath("$[*].wordCount") { value(contains(3, 0, 0, 0, 2)) }
         }
     }
 
     @Test
     fun `filters combine prefix, category and difficulty`() {
         mockMvc.get("/api/v1/words?difficulty=5").andExpect {
-            jsonPath("$.items[*].slug") { value(contains("oclock")) }
+            jsonPath("$.items[*].slug") { value(contains("oclock", "zonk")) } // search still finds sensitive words
         }
         mockMvc.get("/api/v1/words?difficulty=1&category=feelings").andExpect {
             jsonPath("$.items[*].slug") { value(contains("joy")) }
@@ -165,8 +166,8 @@ class CatalogTests(
         mockMvc.get("/api/v1/words?difficulty=1&q=h").andExpect {
             jsonPath("$.items[*].slug") { value(contains("happy")) }
         }
-        mockMvc.get("/api/v1/random-word?difficulty=5").andExpect {
-            jsonPath("$.slug") { value("oclock") }
+        repeat(5) { // zonk is level 5 too, but sensitive words are never picked at random
+            mockMvc.get("/api/v1/random-word?difficulty=5").andExpect { jsonPath("$.slug") { value("oclock") } }
         }
         mockMvc.get("/api/v1/random-word?difficulty=3").andExpect { status { isNotFound() } }
     }
@@ -174,5 +175,10 @@ class CatalogTests(
     @Test
     fun `out of range difficulty is a bad request`() {
         mockMvc.get("/api/v1/words?difficulty=9").andExpect { status { isBadRequest() } }
+    }
+
+    @Test
+    fun `labelled slurs and obscenities are marked sensitive`() {
+        assertEquals(listOf("zonk"), jdbc.queryForList("SELECT slug FROM word WHERE sensitive = TRUE", String::class.java))
     }
 }

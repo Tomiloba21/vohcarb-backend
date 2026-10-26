@@ -28,7 +28,13 @@ interface CategoryRepository : JpaRepository<Category, Long> {
 }
 
 /** Optional word filters; null means "don't filter on this". */
-data class WordFilter(val prefix: String? = null, val category: String? = null, val difficulty: Int? = null) {
+data class WordFilter(
+    val prefix: String? = null,
+    val category: String? = null,
+    val difficulty: Int? = null,
+    /** Leave out [Word.sensitive] words; set wherever words are picked for the user rather than searched. */
+    val excludeSensitive: Boolean = false,
+) {
 
     fun toSpecification(): Specification<Word> {
         val parts = listOfNotNull(
@@ -41,6 +47,7 @@ data class WordFilter(val prefix: String? = null, val category: String? = null, 
             difficulty?.let { level ->
                 Specification<Word> { root, _, cb -> cb.equal(root.get<Short>("difficulty"), level.toShort()) }
             },
+            if (excludeSensitive) Specification<Word> { root, _, cb -> cb.isFalse(root.get("sensitive")) } else null,
         )
         return Specification.allOf(parts)
     }
