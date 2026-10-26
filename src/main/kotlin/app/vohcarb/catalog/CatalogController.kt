@@ -5,16 +5,19 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
+import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import java.time.LocalDate
+import java.time.ZoneOffset
 
 @RestController
 @RequestMapping("/api/v1")
 @Tag(name = "Catalog", description = "Words, definitions and categories")
-class CatalogController(private val catalog: CatalogService) {
+class CatalogController(private val catalog: CatalogService, private val wordOfTheDay: WordOfTheDayService) {
 
     @GetMapping("/categories")
     @Operation(summary = "List all categories with how many words each has")
@@ -40,6 +43,12 @@ class CatalogController(private val catalog: CatalogService) {
         @RequestParam(required = false) category: String?,
         @Parameter(description = "1 (everyday) to 5 (rare)") @RequestParam(required = false) difficulty: Int?,
     ): WordDetailDto = catalog.randomWord(WordFilter(category = category, difficulty = difficulty, excludeSensitive = true))
+
+    @GetMapping("/word-of-the-day")
+    @Operation(summary = "Everyone's word of the day (UTC day), e.g. for a home-screen widget; pass date for another day")
+    fun wordOfTheDay(
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate?,
+    ): WordOfTheDayDto = wordOfTheDay.forDate(date ?: LocalDate.now(ZoneOffset.UTC))
 
     @GetMapping("/words/{slug}")
     @Operation(summary = "One word with pronunciations, senses and examples")

@@ -6,7 +6,6 @@ import app.vohcarb.catalog.toDetail
 import app.vohcarb.practice.srs.CardState
 import app.vohcarb.practice.srs.Scheduler
 import app.vohcarb.user.AppUserRepository
-import app.vohcarb.user.UserPreferencesRepository
 import app.vohcarb.user.now
 import jakarta.persistence.EntityManager
 import org.springframework.http.HttpStatus
@@ -15,8 +14,6 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
 import java.time.Duration
 import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 
 /**
@@ -31,7 +28,7 @@ class PracticeService(
     private val words: WordRepository,
     private val cards: ReviewCardRepository,
     private val logs: ReviewLogRepository,
-    private val preferences: UserPreferencesRepository,
+    private val streaks: StreakService,
     private val quiz: QuizService,
 ) {
 
@@ -110,23 +107,9 @@ class PracticeService(
     @Transactional(readOnly = true)
     fun stats(userId: Long): PracticeStats {
         val now = now()
-        val zone = preferences.findById(userId).map { ZoneId.of(it.timezone) }.orElse(ZoneId.of("UTC"))
-        val today = LocalDate.ofInstant(now, zone)
-
-        val since = today.minusDays(STREAK_WINDOW_DAYS).atStartOfDay(zone).toInstant()
-        val reviewDays = logs.findByUserIdAndReviewedAtAfter(userId, since).map { LocalDate.ofInstant(it.reviewedAt, zone) }
-        val reviewedToday = reviewDays.count { it == today }
-
-        val dayset = reviewDays.toSet()
-        var day = if (today in dayset) today else today.minusDays(1)
-        var streak = 0
-        while (day in dayset) {
-            streak++
-            day = day.minusDays(1)
-        }
-
+        val streak = streaks.summary(userId, now)
         val (due, new) = counts(userId, now)
-        return PracticeStats(due, new, cards.countByUserId(userId), reviewedToday, streak)
+        return PracticeStats(due, new, cards.countByUserId(userId), streak.reviewedToday, streak.streakDays)
     }
 
     /** (reviews due now, saved words never reviewed) */
@@ -146,10 +129,5 @@ class PracticeService(
             .setParameter("now", now)
             .singleResult
         return (row[0] as Number).toLong() to (row[1] as Number).toLong()
-    }
-
-    private companion object {
-        /** How far back streaks are counted. */
-        const val STREAK_WINDOW_DAYS = 400L
     }
 }

@@ -65,6 +65,7 @@ class SecurityConfig(private val props: AuthProperties) {
             "/api/v1/levels",
             "/api/v1/words/**",
             "/api/v1/random-word",
+            "/api/v1/word-of-the-day",
             "/actuator/health/**",
             "/swagger-ui.html",
             "/swagger-ui/**",

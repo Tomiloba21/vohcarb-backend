@@ -34,7 +34,7 @@ class CatalogTests(
     @BeforeAll
     fun importFixture() {
         // Left by other test classes sharing this database
-        for (table in listOf("review_log", "review_card", "user_word")) jdbc.update("DELETE FROM $table")
+        for (table in listOf("review_log", "review_card", "user_word", "group_word")) jdbc.update("DELETE FROM $table")
         stats = fixture().use { importer.importStream(it, replace = true) }
         levelCounts = javaClass.getResourceAsStream("/frequency-fixture.txt")!!.use { frequencyImporter.importStream(it) }
     }

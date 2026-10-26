@@ -59,6 +59,7 @@ import after it. Add `--vohcarb.import.replace=true` to re-import WordNet over a
 | `GET /api/v1/words?q=eph&category=feelings&difficulty=3&page=0&size=20` | Words by prefix, category and/or level, paged (`size` ≤ 100) |
 | `GET /api/v1/words/{slug}` | One word: pronunciations, senses with examples, categories |
 | `GET /api/v1/random-word?category=feelings&difficulty=3` | A random word with full details |
+| `GET /api/v1/word-of-the-day?date=2026-10-26` | Everyone's word of the day (UTC day; `date` optional), e.g. for a widget |
 | `GET /api/v1/info` | App name and API version |
 | `GET /actuator/health` | Health check |
 
@@ -78,6 +79,14 @@ Signed-in endpoints (send `Authorization: Bearer <accessToken>`):
 | `GET /api/v1/me/practice/session?size=10` | Saved words to practise now (due reviews first, then new), each with a quiz question |
 | `POST /api/v1/me/practice/reviews` | Record answers: `AGAIN`, `HARD`, `GOOD` or `EASY` (below) |
 | `GET /api/v1/me/practice/stats` | Reviews due, new words, total cards, reviews today, streak |
+| `POST /api/v1/groups` `{"name": "..."}` · `GET /api/v1/groups` | Create a group (you're the owner) · your groups |
+| `POST /api/v1/groups/join` `{"code": "DK6H-GQFC"}` | Join with an invite code (case, spaces and dashes don't matter) |
+| `GET /api/v1/groups/{id}` | Members (display names only) and the invite code |
+| `POST /api/v1/groups/{id}/leave` | Leave; an owner hands over to the longest-standing member, the last one out deletes the group |
+| `DELETE /api/v1/groups/{id}/members/{userId}` · `POST /api/v1/groups/{id}/invite-code` · `DELETE /api/v1/groups/{id}` | Owner only: remove a member · replace the code · delete the group |
+| `GET` · `POST` `{"word", "note"}` · `DELETE /{slug}` on `/api/v1/groups/{id}/words` | The shared word list; whoever added a word, or the owner, can remove it |
+| `GET /api/v1/groups/{id}/word-of-the-day` | The group's own word of the day, the same for every member |
+| `GET /api/v1/groups/{id}/leaderboard?days=7` | Members ranked by answers in the period, then streak; also words mastered (interval ≥ 21 days) |
 
 To try them in Swagger UI: call dev-login, copy `accessToken`, click **Authorize** and paste it.
 
@@ -104,7 +113,7 @@ POST /api/v1/me/sync
 - The feed only skips words once they're marked `seen`, so the app should report words as seen when
   they're shown.
 
-While users have saved words or reviews, the WordNet import refuses to replace the catalog, because that
+While users have saved words, reviews or group words, the WordNet import refuses to replace the catalog, because that
 would renumber the words.
 
 ## Practice (spaced repetition)
@@ -125,6 +134,16 @@ this?* (with the word blanked out of its own definition). Wrong answers are othe
 speech and a similar level. The correct answer is included, so the app can grade offline. Answers are
 uploaded with the time they happened (`reviewedAt`): re-sending the same answer is harmless, and answers
 older than the card's last review only count towards stats. Streaks use the timezone from your preferences.
+
+## Groups
+
+Friends are the people in your groups: there's no separate friend list. Anyone with a group's 8-character
+invite code can join (codes avoid look-alike characters such as 0/O and 1/I/L). The owner can remove members
+and replace the code, which stops the old one working. Groups you're not in answer 404, so nobody can find out
+which groups exist. Limits: 50 members per group, 20 groups per person.
+
+Words of the day are worked out from the date (and the group), so nothing is stored and everyone sees the
+same word. They're picked from levels 3–4 and are never sensitive words.
 
 ## Sensitive words
 
@@ -166,8 +185,8 @@ Write them in SQL that works on MariaDB, MySQL and H2.
 ## Project layout
 
 Code is organised by feature under `src/main/kotlin/app/vohcarb/`:
-`info/`, `catalog/` (with `catalog/importer/`), `auth/`, `user/`, `progress/`, `practice/`, then `social/`,
-`notify/` as they are built.
+`info/`, `catalog/` (with `catalog/importer/`), `auth/`, `user/`, `progress/`, `practice/`, `social/`, then
+`notify/`.
 
 ## License
 

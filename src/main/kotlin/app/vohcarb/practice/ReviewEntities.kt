@@ -14,6 +14,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Query
 import java.time.Instant
 import kotlin.math.roundToInt
 
@@ -64,11 +65,20 @@ interface ReviewCardRepository : JpaRepository<ReviewCard, Long> {
     fun findByUserIdAndWordIdIn(userId: Long, wordIds: Collection<Long>): List<ReviewCard>
 
     fun countByUserId(userId: Long): Long
+
+    /** (userId, cards with an interval of at least [minInterval] days) for each of [userIds] that has any. */
+    @Query("SELECT c.userId, COUNT(c) FROM ReviewCard c WHERE c.userId IN :userIds AND c.intervalDays >= :minInterval GROUP BY c.userId")
+    fun countMatureByUser(userIds: Collection<Long>, minInterval: Int): List<Array<Any>>
 }
 
 interface ReviewLogRepository : JpaRepository<ReviewLog, Long> {
 
     fun existsByUserIdAndWordIdAndReviewedAt(userId: Long, wordId: Long, reviewedAt: Instant): Boolean
 
-    fun findByUserIdAndReviewedAtAfter(userId: Long, after: Instant): List<ReviewLog>
+    @Query("SELECT l.reviewedAt FROM ReviewLog l WHERE l.userId = :userId AND l.reviewedAt > :after")
+    fun reviewTimes(userId: Long, after: Instant): List<Instant>
+
+    /** (userId, reviews since [since]) for each of [userIds] that has any. */
+    @Query("SELECT l.userId, COUNT(l) FROM ReviewLog l WHERE l.userId IN :userIds AND l.reviewedAt >= :since GROUP BY l.userId")
+    fun countByUserSince(userIds: Collection<Long>, since: Instant): List<Array<Any>>
 }

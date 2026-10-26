@@ -113,7 +113,7 @@ class WordNetImporter(private val jdbc: JdbcTemplate) {
         const val SOURCE = "oewn"
         private const val BATCH_SIZE = 1_000
         /** Tables holding users' data that points at words. */
-        private val USER_TABLES = listOf("user_word", "review_card", "review_log")
+        private val USER_TABLES = listOf("user_word", "review_card", "review_log", "group_word")
         private val CATALOG_WORD = Regex("[a-z][a-z'-]*[a-z]")
 
         fun isCatalogWord(lemma: String) = lemma.length >= 3 && CATALOG_WORD.matches(lemma)
