@@ -5,3 +5,5 @@ vohcarb:
   auth:
     jwt-secret: test-only-secret-never-use-in-production-0000
     dev-login-enabled: true
+  reminders:
+    enabled: false

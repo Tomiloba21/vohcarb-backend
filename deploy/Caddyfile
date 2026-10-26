@@ -1,0 +1,10 @@
+# With a real domain (DOMAIN=api.example.com) Caddy gets and renews a Let's Encrypt certificate by itself.
+# With DOMAIN=:80 it serves plain HTTP, handy before you have a domain.
+{$DOMAIN} {
+	encode zstd gzip
+
+	# Local-development tools stay private even if someone enables them by mistake.
+	respond /h2-console* 404
+
+	reverse_proxy backend:8080
+}

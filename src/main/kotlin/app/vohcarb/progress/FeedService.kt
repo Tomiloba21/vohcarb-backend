@@ -9,6 +9,7 @@ import app.vohcarb.user.UserPreferencesRepository
 import jakarta.persistence.EntityManager
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import kotlin.random.Random
 
 @Service
 @Transactional(readOnly = true)
@@ -22,13 +23,15 @@ class FeedService(
      * words they have already seen or marked as known. Words stay in the feed until the app reports them as seen,
      * so fetching again before that returns new random picks from the same pool.
      */
-    fun feed(userId: Long, size: Int?): List<WordDetailDto> {
+    fun feed(userId: Long, size: Int?, random: Random = Random.Default): List<WordDetailDto> {
         val prefs = preferences.findById(userId).orElseGet { UserPreferences(userId = userId) }
         val categoryIds = prefs.categories.map { it.id }
 
-        val query = em.createQuery(
+        // Shuffled here rather than with ORDER BY RANDOM(): that function is named differently in every database
+        // (H2 has random(), MariaDB only rand()). Only ids travel, so even ~60k candidates are cheap.
+        val candidates = em.createQuery(
             """
-            SELECT w FROM Word w
+            SELECT w.id FROM Word w
             WHERE w.sensitive = FALSE
               AND COALESCE(w.difficulty, :rare) BETWEEN :min AND :max
               AND (:allCategories = TRUE OR EXISTS (
@@ -36,19 +39,23 @@ class FeedService(
               AND NOT EXISTS (
                     SELECT 1 FROM UserWord uw
                     WHERE uw.userId = :userId AND uw.word = w AND (uw.seen = TRUE OR uw.known = TRUE))
-            ORDER BY random()
             """.trimIndent(),
-            Word::class.java,
+            Long::class.javaObjectType,
         )
-        return query
             .setParameter("rare", Difficulty.RARE.level.toShort())
             .setParameter("min", prefs.minDifficulty)
             .setParameter("max", prefs.maxDifficulty)
             .setParameter("allCategories", categoryIds.isEmpty())
             .setParameter("categoryIds", categoryIds.ifEmpty { listOf(-1L) }) // IN () is invalid SQL
             .setParameter("userId", userId)
-            .setMaxResults(size ?: prefs.wordsPerDay.toInt())
             .resultList
-            .map { it.toDetail() }
+
+        val picked = candidates.shuffled(random).take(size ?: prefs.wordsPerDay.toInt())
+        if (picked.isEmpty()) return emptyList()
+        val byId = em.createQuery("SELECT w FROM Word w WHERE w.id IN :ids", Word::class.java)
+            .setParameter("ids", picked)
+            .resultList
+            .associateBy { it.id }
+        return picked.mapNotNull { byId[it]?.toDetail() }
     }
 }

@@ -179,6 +179,6 @@ class CatalogTests(
 
     @Test
     fun `labelled slurs and obscenities are marked sensitive`() {
-        assertEquals(listOf("zonk"), jdbc.queryForList("SELECT slug FROM word WHERE sensitive = TRUE", String::class.java))
+        assertEquals(listOf("zonk"), jdbc.queryForList("SELECT slug FROM word WHERE is_sensitive = TRUE", String::class.java))
     }
 }

@@ -16,6 +16,6 @@ object SensitiveWords {
     )
 
     /** Marks every word having at least one labelled sense. Run after each import (and once by migration V7). */
-    val MARK_SQL = "UPDATE word SET sensitive = TRUE WHERE id IN (SELECT word_id FROM sense WHERE " +
+    val MARK_SQL = "UPDATE word SET is_sensitive = TRUE WHERE id IN (SELECT word_id FROM sense WHERE " +
         LABELS.joinToString(" OR ") { "LOWER(definition) LIKE '%$it%'" } + ")"
 }

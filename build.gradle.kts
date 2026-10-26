@@ -31,6 +31,8 @@ dependencies {
 	implementation("org.flywaydb:flyway-mysql")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.2.0")
+	// Service-account tokens for the FCM HTTP v1 API (much lighter than the Firebase Admin SDK)
+	implementation("com.google.auth:google-auth-library-oauth2-http:1.53.0")
 	implementation("tools.jackson.module:jackson-module-kotlin")
 	runtimeOnly("com.h2database:h2")
 	runtimeOnly("org.mariadb.jdbc:mariadb-java-client")

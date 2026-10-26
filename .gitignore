@@ -41,3 +41,9 @@ out/
 
 ### Local H2 database ###
 data/
+
+### Deployment (never commit secrets or backups) ###
+deploy/.env
+deploy/secrets/*
+!deploy/secrets/.gitkeep
+deploy/backups/

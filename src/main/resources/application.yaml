@@ -33,6 +33,8 @@ spring:
 
 server:
   port: 8080
+  # Behind Caddy on the VPS: trust X-Forwarded-* so redirects and links use https and the real host
+  forward-headers-strategy: framework
 
 management:
   endpoints:
@@ -43,6 +45,9 @@ management:
 vohcarb:
   auth:
     jwt-secret: ${JWT_SECRET:}
+  push:
+    # Firebase service-account JSON; unset means notifications are only logged
+    fcm-credentials-file: ${FCM_CREDENTIALS_FILE:}
 
 ---
 # Local development (the default for ./gradlew bootRun): dev login on, throwaway signing key.

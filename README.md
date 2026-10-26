@@ -86,6 +86,8 @@ Signed-in endpoints (send `Authorization: Bearer <accessToken>`):
 | `DELETE /api/v1/groups/{id}/members/{userId}` · `POST /api/v1/groups/{id}/invite-code` · `DELETE /api/v1/groups/{id}` | Owner only: remove a member · replace the code · delete the group |
 | `GET` · `POST` `{"word", "note"}` · `DELETE /{slug}` on `/api/v1/groups/{id}/words` | The shared word list; whoever added a word, or the owner, can remove it |
 | `GET /api/v1/groups/{id}/word-of-the-day` | The group's own word of the day, the same for every member |
+| `POST /api/v1/me/devices` `{"token", "platform": "ANDROID"}` · `DELETE /api/v1/me/devices?token=` · `GET` | Register a phone's FCM token for reminders · remove · list |
+| `POST /api/v1/me/devices/test` | Send yourself a test notification |
 | `GET /api/v1/groups/{id}/leaderboard?days=7` | Members ranked by answers in the period, then streak; also words mastered (interval ≥ 21 days) |
 
 To try them in Swagger UI: call dev-login, copy `accessToken`, click **Authorize** and paste it.
@@ -145,6 +147,23 @@ which groups exist. Limits: 50 members per group, 20 groups per person.
 Words of the day are worked out from the date (and the group), so nothing is stored and everyone sees the
 same word. They're picked from levels 3–4 and are never sensitive words.
 
+## Notifications
+
+Each user picks reminder times (in their timezone) in their preferences. Every minute the server sends
+reminders that are due to the user's registered phones: **"3 words are ready for review"** when practice is
+due, otherwise **the word of the day**. A reminder still goes out up to 15 minutes late (e.g. after a
+restart) and never twice.
+
+Sending uses Firebase Cloud Messaging (Android, and iOS through FCM). Until `FCM_CREDENTIALS_FILE` points at
+a Firebase service-account key, notifications are only written to the log. Devices that FCM reports as
+uninstalled are forgotten automatically.
+
+## Deployment
+
+See **[docs/deploy.md](docs/deploy.md)**: a step-by-step guide for a Hetzner (or Contabo) VPS with Docker
+Compose: MariaDB, the backend, Caddy for automatic HTTPS, nightly backups and updates. The files are in
+[`deploy/`](deploy/) and the image is built from the [`Dockerfile`](Dockerfile).
+
 ## Sensitive words
 
 About 120 words have a sense WordNet labels as a slur or obscenity (`SensitiveWords.kt`). They stay in
@@ -180,13 +199,16 @@ SPRING_PROFILES_ACTIVE=dev,mariadb DB_PASSWORD=change-me ./gradlew bootRun
 ```
 
 Schema changes go through Flyway migrations in `src/main/resources/db/migration`.
-Write them in SQL that works on MariaDB, MySQL and H2.
+Write them in SQL that works on MariaDB, MySQL and H2. Watch out for words that H2 accepts but MariaDB
+reserves (e.g. `sensitive`), and for functions with different names (`random()` vs `rand()`). The test suite
+runs on H2, so run new migrations and queries against MariaDB once (Docker is easiest).
 
 ## Project layout
 
 Code is organised by feature under `src/main/kotlin/app/vohcarb/`:
-`info/`, `catalog/` (with `catalog/importer/`), `auth/`, `user/`, `progress/`, `practice/`, `social/`, then
-`notify/`.
+`info/`, `catalog/` (with `catalog/importer/`), `auth/`, `user/`, `progress/`, `practice/`, `social/` and
+`notify/`. Database migrations are in `src/main/resources/db/migration` (SQL) and `src/main/kotlin/db/migration`
+(Kotlin, for data changes that share code with the app).
 
 ## License
 
