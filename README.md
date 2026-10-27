@@ -53,6 +53,23 @@ Either file can be imported on its own. Re-importing WordNet resets the levels, 
 import after it. Add `--vohcarb.import.replace=true` to re-import WordNet over an existing catalog, and add
 `mariadb` to the profiles (`--spring.profiles.active=mariadb,import`) to load a MariaDB database instead.
 
+### Load the game lists
+
+The word games check *Name* and *Place* answers against two lists (Animal and Thing use the catalog):
+
+```bash
+curl -L -o data/raw/countryInfo.txt https://download.geonames.org/export/dump/countryInfo.txt
+curl -L -o data/raw/cities15000.zip https://download.geonames.org/export/dump/cities15000.zip
+curl -L -o data/raw/baby-names.csv https://raw.githubusercontent.com/hadley/data-baby-names/master/baby-names.csv
+./gradlew bootRun --args='--spring.profiles.active=import --vohcarb.import.countries-file=data/raw/countryInfo.txt --vohcarb.import.cities-file=data/raw/cities15000.zip --vohcarb.import.names-files=data/raw/baby-names.csv'
+```
+
+Places are countries and cities of 15,000+ people from [GeoNames](https://www.geonames.org/) (CC BY 4.0).
+Names are US first names from the SSA's baby-name data (public domain, via
+[hadley/data-baby-names](https://github.com/hadley/data-baby-names); ssa.gov blocks scripted downloads).
+`names-files` takes a comma-separated list, and plain lists (one name per line) work too, so local names can be
+added. Each import replaces that list. Answers missing from the lists go to a vote in group games.
+
 ## API
 
 | Endpoint | What it returns |
@@ -92,6 +109,13 @@ Signed-in endpoints (send `Authorization: Bearer <accessToken>`):
 | `POST /api/v1/me/devices` `{"token", "platform": "ANDROID"}` · `DELETE /api/v1/me/devices?token=` · `GET` | Register a phone's FCM token for reminders · remove · list |
 | `POST /api/v1/me/devices/test` | Send yourself a test notification |
 | `GET /api/v1/groups/{id}/leaderboard?days=7` | Members ranked by answers in the period, then streak; also words mastered (interval ≥ 21 days) |
+| `GET /api/v1/games/daily?group=` | Today's 5 challenges (UTC day) and your status/score; `group` for that group's own challenges |
+| `POST /api/v1/games/daily/{challenge}/start?group=` | Start or resume: letters, category or word hints, and the deadline (answers are never sent) |
+| `POST /api/v1/games/plays/{playId}/reveal` `{"index": 0}` | Complete the word: one more letter (−3 points) |
+| `POST /api/v1/games/plays/{playId}/submit` | Hand in `rounds` (Name-Place-Animal-Thing), `words` (sprint) or `answers` (complete the word); returns the result |
+| `GET /api/v1/games/plays/{playId}` | Your result, with points per answer |
+| `GET /api/v1/games/daily/{challenge}/leaderboard?group=&date=` | Scores for a day: global top 50 and you, or the whole group |
+| `GET /api/v1/games/daily/review?group=` · `PUT /api/v1/games/answers/{id}/vote` `{"accepted": false}` | Group members' names/places not in the lists · accept or reject one |
 
 To try them in Swagger UI: call dev-login, copy `accessToken`, click **Authorize** and paste it.
 
@@ -149,6 +173,18 @@ which groups exist. Limits: 50 members per group, 20 groups per person.
 
 Words of the day are worked out from the date (and the group), so nothing is stored and everyone sees the
 same word. They're picked from levels 3–4 and are never sensitive words.
+
+## Word games
+
+Daily challenges, the same for everyone that UTC day (and different in each group, like the group word of
+the day): **Name, Place, Animal, Thing** (5 letters, 60 s each), **Category sprint** (60 s, points = each
+word's level) and **Complete the word** (easy, medium, hard: 10 meanings with some letters shown). Each can be
+played once a day, globally and in each group; the server times plays and keeps the answers, so phones can't see
+them. Rules and scoring are in [`GameRules.kt`](src/main/kotlin/app/vohcarb/game/GameRules.kt); the full design,
+including live play still to come, is in [docs/games.md](docs/games.md).
+
+In Name-Place-Animal-Thing a valid answer scores 10, or 5 if someone else gave it too. Names and places missing
+from the lists stand in group games unless most voters reject them; in the global challenge they score 0.
 
 ## Notifications
 
@@ -209,8 +245,8 @@ runs on H2, so run new migrations and queries against MariaDB once (Docker is ea
 ## Project layout
 
 Code is organised by feature under `src/main/kotlin/app/vohcarb/`:
-`info/`, `catalog/` (with `catalog/importer/`), `auth/`, `user/`, `progress/`, `practice/`, `social/` and
-`notify/`. Database migrations are in `src/main/resources/db/migration` (SQL) and `src/main/kotlin/db/migration`
+`info/`, `catalog/` (with `catalog/importer/`), `auth/`, `user/`, `progress/`, `practice/`, `social/`,
+`notify/` and `game/`. Database migrations are in `src/main/resources/db/migration` (SQL) and `src/main/kotlin/db/migration`
 (Kotlin, for data changes that share code with the app).
 
 ## License
@@ -219,5 +255,6 @@ Code: [Apache 2.0](LICENSE).
 
 Word data: [Open English WordNet](https://github.com/globalwordnet/english-wordnet) by the Global WordNet
 community, licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The app must show this
-attribution. Frequency data: [FrequencyWords](https://github.com/hermitdave/FrequencyWords) by Hermit Dave,
+attribution. Game lists: [GeoNames](https://www.geonames.org/) (CC BY 4.0, attribution required) and SSA baby
+names (public domain). Frequency data: [FrequencyWords](https://github.com/hermitdave/FrequencyWords) by Hermit Dave,
 built from OpenSubtitles 2018, licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).

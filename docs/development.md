@@ -4,7 +4,7 @@ Everything someone (or an AI assistant) needs to pick up Vohcarb where it was le
 how to work on it, the traps already found, and what comes next. The [README](../README.md) documents the API
 itself; [deploy.md](deploy.md) covers the server.
 
-*Last updated: 2026-10-26, after backend phase 6.*
+*Last updated: 2026-10-27, after games phase G1.*
 
 ---
 
@@ -17,7 +17,7 @@ and share words with friends in groups.
 | Part | Repository | Status |
 |---|---|---|
 | Backend (this repo) | `github.com/Tomiloba21/vohcarb-backend` | Phases 0–6 done |
-| App | `vohcarb-app` (to be created) | Not started: Kotlin Multiplatform, Android first, iOS later |
+| App | `github.com/Tomiloba21/vohcarb-app` | Android phases 1–4 done (see its README); iOS later |
 
 ## Decisions (and why)
 
@@ -114,10 +114,14 @@ On Windows, run these in Git Bash or WSL, or replace `$PWD` with `%cd%` in cmd.
 | 4 | Spaced-repetition practice, quizzes, streaks, sensitive-word filter | `e8b022d` |
 | 5 | Friend groups, invite codes, shared lists, word of the day, leaderboard | `cf23fac` |
 | 6 | Push reminders (FCM), Docker deployment, CI; MariaDB fixes | `a82f084` |
+| G1 | Word games: daily challenges (Name-Place-Animal-Thing, category sprint, complete the word), name/place lists, group votes, leaderboards | (this commit) |
 
 Not done yet, roughly in order:
 
-1. **The app** (next; see below).
+1. **Games**: the app's daily-challenge screens (G2), then live play over WebSockets (G3, G4); see
+   [games.md](games.md). **Run V10 against MariaDB once** (not done yet: Docker wasn't running).
+   The app itself is in `github.com/Tomiloba21/vohcarb-app` (Android phases 1–4 done: feed, offline sync,
+   practice, groups, widget).
 2. **Firebase project**: needed for Google Sign-In *and* push notifications. Free.
 3. **Google Sign-In endpoint** (`POST /api/v1/auth/google`), once the Firebase/Google project exists.
 4. **Buy the VPS and a domain**, then follow [deploy.md](deploy.md).

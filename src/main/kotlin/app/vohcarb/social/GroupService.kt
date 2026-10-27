@@ -4,6 +4,7 @@ import app.vohcarb.catalog.PageResponse
 import app.vohcarb.catalog.WordOfTheDayDto
 import app.vohcarb.catalog.WordOfTheDayService
 import app.vohcarb.catalog.WordRepository
+import app.vohcarb.game.GroupGameData
 import app.vohcarb.user.AppUserRepository
 import app.vohcarb.user.now
 import org.springframework.data.domain.PageRequest
@@ -29,6 +30,7 @@ class GroupService(
     private val users: AppUserRepository,
     private val words: WordRepository,
     private val wordOfTheDay: WordOfTheDayService,
+    private val gameData: GroupGameData,
 ) {
 
     private val random = SecureRandom()
@@ -142,6 +144,7 @@ class GroupService(
     }
 
     private fun deleteGroup(groupId: Long) {
+        gameData.deleteGroup(groupId)
         groupWords.deleteByGroupId(groupId)
         members.deleteByGroup(groupId)
         groups.deleteById(groupId)
