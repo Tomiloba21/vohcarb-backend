@@ -7,3 +7,12 @@ vohcarb:
     dev-login-enabled: true
   reminders:
     enabled: false
+  # Live matches in tests: short timings so whole matches run in seconds
+  live:
+    countdown-millis: 50
+    round-millis: 1500
+    word-millis: 1500
+    vote-millis: 1500
+    results-millis: 100
+    quick-wait-millis: 200
+    grace-millis: 100

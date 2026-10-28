@@ -116,6 +116,11 @@ Signed-in endpoints (send `Authorization: Bearer <accessToken>`):
 | `GET /api/v1/games/plays/{playId}` | Your result, with points per answer |
 | `GET /api/v1/games/daily/{challenge}/leaderboard?group=&date=` | Scores for a day: global top 50 and you, or the whole group |
 | `GET /api/v1/games/daily/review?group=` · `PUT /api/v1/games/answers/{id}/vote` `{"accepted": false}` | Group members' names/places not in the lists · accept or reject one |
+| `GET /api/v1/games/live/rooms` | Live play lobby: open public rooms, rooms made for your groups, rooms you're in |
+| `POST /api/v1/games/live/rooms` `{"challenge", "kind": "FRIENDS"\|"PUBLIC", "groupId"}` | Open a room (you're the host); FRIENDS rooms are joined with their 6-character code or from their group |
+| `POST /api/v1/games/live/rooms/join` `{"code"}` · `POST .../rooms/{id}/join` · `POST .../rooms/{id}/leave` | Join by code · join a public or group room · leave |
+| `POST /api/v1/games/live/quick` `{"challenge"}` | Quick match with strangers: starts by itself 15 s after the second player arrives (or at 6) |
+| `WS /ws/games/rooms/{id}` | The match itself (below) |
 
 To try them in Swagger UI: call dev-login, copy `accessToken`, click **Authorize** and paste it.
 
@@ -184,7 +189,31 @@ them. Rules and scoring are in [`GameRules.kt`](src/main/kotlin/app/vohcarb/game
 including live play still to come, is in [docs/games.md](docs/games.md).
 
 In Name-Place-Animal-Thing a valid answer scores 10, or 5 if someone else gave it too. Names and places missing
-from the lists stand in group games unless most voters reject them; in the global challenge they score 0.
+from the lists stand in group games unless most voters reject them; in the global challenge they score 0. A Thing
+can be an object, food or a material.
+
+### Live play
+
+Friends (room code or group), strangers (quick match) or an open lobby; 2 to 6 players, the same three games.
+Rooms are created and joined over REST; the match runs over a WebSocket, `/ws/games/rooms/{id}`, opened with the
+usual `Authorization: Bearer` header. After every change the server sends each player
+`{"type": "state", "state": {...}}`: the phase (`LOBBY`, `COUNTDOWN`, `ROUND`, `VOTING`, `RESULTS`, `FINISHED`),
+when it ends, the server's clock, players and scores, this round's letter, category or hint (with *your* revealed
+letters), names/places to vote on, and each player's answers and points after a round. Phones send:
+
+```json
+{"type": "start"}                                         // host; quick-match rooms start by themselves
+{"type": "npat", "round": 0, "answers": {"name": "Bola", "place": "Benin", "animal": "bear", "thing": "bottle"}}
+{"type": "words", "round": 0, "words": ["swim", "dance"]}  // category sprint, at the end of the minute
+{"type": "answer", "round": 3, "answer": "zombie"}        // complete the word; timed by the server
+{"type": "reveal", "round": 3}
+{"type": "vote", "key": "12:PLACE", "accepted": false}
+```
+
+A round ends when time is up or everyone connected has answered (answers are final). Name-Place-Animal-Thing
+then has a 15 s vote on unlisted names and places. Mistakes come back as `{"type": "error", "message": ...}`.
+Rooms live in memory on the one server, so a restart ends running matches; finished matches are saved
+(`live_match`). Timings are settings (`vohcarb.live.*-millis`), short in tests.
 
 ## Notifications
 

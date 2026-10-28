@@ -1,7 +1,7 @@
 # Word games: design
 
-*2026-10-27. Decisions marked ✅ were made by the author; the rest are proposals to confirm. G1 (daily challenges,
-backend) is built; see the README's "Word games" section for the API.*
+*2026-10-27. Decisions marked ✅ were made by the author; the rest are proposals to confirm. G1 (daily challenges)
+and G3 (live play) are built on the backend; see the README's "Word games" section for the API and protocol.*
 
 G1 differs from this draft in one way: in the **global** daily challenge, unlisted names and places simply score 0
 for now; the "submit for review" step will come with live play (G3).
@@ -18,7 +18,7 @@ Everyone gets the same random letter and has **60 s** to write one answer per ca
 | Category | Valid when | Source |
 |---|---|---|
 | Animal | in the catalog's `animals` category (3,151 words) | WordNet (have it) |
-| Thing | in the catalog's `objects` category (8,426 words) | WordNet (have it) |
+| Thing | in the catalog's `objects`, `food` or `substances` categories (banana, rice and wood all count) ✅ | WordNet (have it) |
 | Place | a country or a city in the place list | **GeoNames** `countryInfo` + `cities15000` (CC BY 4.0; credit in the app) |
 | Name | a first name in the names list | **US SSA baby names** (public domain), plus names added through votes |
 
@@ -94,7 +94,7 @@ Each phase is usable on its own: after G2, friends can already compete on the da
 
 ## Still to decide
 
-1. Match sizes for live play: 2–6 players? (proposed)
+1. ✅ Match sizes for live play: 2–6 players, scores and a winner per match, no ratings for now.
 2. Should games affect learning (e.g. words you missed in Complete-the-word get saved for practice)? Proposed: offer a
    "save the words I missed" button at the end, off by default.
-3. Ratings like chess.com's Elo for quick match, or just scores? Proposed: scores first, ratings later if wanted.
+3. ✅ Ratings: not now (scores only).

@@ -114,14 +114,15 @@ On Windows, run these in Git Bash or WSL, or replace `$PWD` with `%cd%` in cmd.
 | 4 | Spaced-repetition practice, quizzes, streaks, sensitive-word filter | `e8b022d` |
 | 5 | Friend groups, invite codes, shared lists, word of the day, leaderboard | `cf23fac` |
 | 6 | Push reminders (FCM), Docker deployment, CI; MariaDB fixes | `a82f084` |
-| G1 | Word games: daily challenges (Name-Place-Animal-Thing, category sprint, complete the word), name/place lists, group votes, leaderboards | (this commit) |
+| G1 | Word games: daily challenges (Name-Place-Animal-Thing, category sprint, complete the word), name/place lists, group votes, leaderboards | `be47b18` |
+| G3 | Live play: rooms (friends, public, quick match), WebSocket matches, votes, saved results; Thing = objects, food, materials | (this commit) |
 
 Not done yet, roughly in order:
 
-1. **Games**: the app's daily-challenge screens (G2), then live play over WebSockets (G3, G4); see
-   [games.md](games.md). **Run V10 against MariaDB once** (not done yet: Docker wasn't running).
-   The app itself is in `github.com/Tomiloba21/vohcarb-app` (Android phases 1–4 done: feed, offline sync,
-   practice, groups, widget).
+1. **Games**: the app's live-play screens (G4); see [games.md](games.md). **Run V10 and V11 against MariaDB once.**
+   The app itself is in `github.com/Tomiloba21/vohcarb-app` (feed, offline sync, practice, groups, widget, daily
+   games, themes).
+   Caddy proxies WebSockets without extra configuration, so `/ws/games/...` works behind it as is.
 2. **Firebase project**: needed for Google Sign-In *and* push notifications. Free.
 3. **Google Sign-In endpoint** (`POST /api/v1/auth/google`), once the Firebase/Google project exists.
 4. **Buy the VPS and a domain**, then follow [deploy.md](deploy.md).

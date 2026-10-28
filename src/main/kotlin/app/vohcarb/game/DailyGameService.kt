@@ -25,7 +25,7 @@ class DailyGameService(
     private val answers: GameAnswerRepository,
     private val votes: GameVoteRepository,
     private val content: DailyContent,
-    private val lists: AnswerLists,
+    private val judge: AnswerJudge,
     private val groups: GroupService,
     private val members: GroupMemberRepository,
     private val users: AppUserRepository,
@@ -190,60 +190,24 @@ class DailyGameService(
     // Answers
 
     private fun npatAnswers(playId: Long, c: Content.Npat, rounds: List<NpatRoundAnswers>): List<GameAnswer> {
-        data class Raw(val round: Int, val category: NpatRules.Category, val text: String, val normalized: String)
-        val raw = rounds.take(c.letters.size).flatMapIndexed { round, r ->
+        val entries = rounds.take(c.letters.size).flatMapIndexed { round, r ->
             listOf(
                 NpatRules.Category.NAME to r.name, NpatRules.Category.PLACE to r.place,
                 NpatRules.Category.ANIMAL to r.animal, NpatRules.Category.THING to r.thing,
-            ).mapNotNull { (category, text) ->
-                text?.trim()?.take(MAX_ANSWER)?.takeIf { it.isNotEmpty() }?.let { Raw(round, category, it, AnswerText.normalize(it)) }
-            }
+            ).mapNotNull { (category, text) -> text?.let { NpatEntry(round to category, c.letters[round], category, it) } }
         }
-        fun keys(category: NpatRules.Category) = raw.filter { it.category == category }.map { it.normalized }
-        val names = lists.knownNames(keys(NpatRules.Category.NAME))
-        val places = lists.knownPlaces(keys(NpatRules.Category.PLACE))
-        val animals = lists.wordsInCategory(AnswerLists.ANIMALS, keys(NpatRules.Category.ANIMAL)).keys
-        val things = lists.wordsInCategory(AnswerLists.THINGS, keys(NpatRules.Category.THING)).keys
-        return raw.map { r ->
-            val verdict = when {
-                r.normalized.isEmpty() || r.normalized.first() != c.letters[r.round] -> Verdict.INVALID
-                r.category == NpatRules.Category.NAME -> listedOr(r.normalized in names, r.normalized)
-                r.category == NpatRules.Category.PLACE -> listedOr(r.normalized in places, r.normalized)
-                r.category == NpatRules.Category.ANIMAL -> if (r.normalized in animals) Verdict.VALID else Verdict.INVALID
-                else -> if (r.normalized in things) Verdict.VALID else Verdict.INVALID
-            }
-            GameAnswer(playId, r.round, r.category.name, r.text, r.normalized, verdict, points = 0)
-        }
+        return judge.npat(entries).map { (key, j) ->
+            GameAnswer(playId, key.first, key.second.name, j.text, j.normalized, j.verdict, points = 0)
+        }.sortedWith(compareBy({ it.item }, { it.slot }))
     }
 
-    /** Names and places missing from the lists go to a vote, unless they're too short to be real. */
-    private fun listedOr(listed: Boolean, normalized: String) = when {
-        listed -> Verdict.VALID
-        normalized.length >= 2 -> Verdict.UNLISTED
-        else -> Verdict.INVALID
-    }
-
-    private fun sprintAnswers(playId: Long, c: Content.Sprint, words: List<String>): List<GameAnswer> {
-        val typed = words.map { it.trim().take(MAX_ANSWER) }.filter { it.isNotEmpty() }
-            .map { it to AnswerText.normalize(it) }.filter { it.second.isNotEmpty() }.distinctBy { it.second }
-        val known = lists.wordsInCategory(c.category.slug, typed.map { it.second })
-        return typed.mapIndexed { i, (text, normalized) ->
-            val valid = normalized in known
-            GameAnswer(playId, i, "", text, normalized, if (valid) Verdict.VALID else Verdict.INVALID, if (valid) SprintRules.points(known[normalized]) else 0)
-        }
-    }
+    private fun sprintAnswers(playId: Long, c: Content.Sprint, words: List<String>): List<GameAnswer> =
+        judge.sprint(c.category.slug, words).mapIndexed { i, j -> GameAnswer(playId, i, "", j.text, j.normalized, j.verdict, j.points) }
 
     private fun completeAnswers(playId: Long, c: Content.Complete, given: List<CompleteAnswer>, reveals: List<Int>): List<GameAnswer> =
         given.distinctBy { it.index }.filter { it.index in c.words.indices }.map { a ->
-            val text = a.answer.trim().take(MAX_ANSWER)
-            val normalized = AnswerText.normalize(text)
-            val correct = normalized == c.words[a.index].word
-            GameAnswer(
-                playId, a.index, "", text, normalized,
-                if (correct) Verdict.VALID else Verdict.INVALID,
-                CompleteRules.points(correct, c.hint, a.elapsedMs, reveals[a.index]),
-                a.elapsedMs,
-            )
+            val j = judge.complete(c.words[a.index], c.hint, a.answer, a.elapsedMs, reveals[a.index])
+            GameAnswer(playId, a.index, "", j.text, j.normalized, j.verdict, j.points, a.elapsedMs)
         }
 
     // Scores
@@ -343,6 +307,5 @@ class DailyGameService(
         val GRACE: Duration = Duration.ofSeconds(30)
         const val GLOBAL = 0L
         const val TOP = 50
-        const val MAX_ANSWER = 64
     }
 }

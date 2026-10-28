@@ -24,9 +24,14 @@ data class CompleteWord(val word: String, val definition: String, val partOfSpee
 class DailyContent(private val em: EntityManager) {
 
     /** [scopeKey]: 0 for the global challenge, else the group id (each group gets its own rounds). */
-    fun forDay(challenge: Challenge, date: LocalDate, scopeKey: Long): Content {
+    fun forDay(challenge: Challenge, date: LocalDate, scopeKey: Long): Content =
         // kotlin.random.Random with a fixed seed gives the same sequence on every JVM.
-        val random = Random(date.toEpochDay() * 1_000_003 + scopeKey * 7_919 + challenge.ordinal)
+        generate(challenge, Random(date.toEpochDay() * 1_000_003 + scopeKey * 7_919 + challenge.ordinal))
+
+    /** Fresh rounds for a live match. */
+    fun random(challenge: Challenge): Content = generate(challenge, Random.Default)
+
+    private fun generate(challenge: Challenge, random: Random): Content {
         return when (challenge.game) {
             Game.NAME_PLACE_ANIMAL_THING -> Content.Npat(NpatRules.letters(random))
             Game.CATEGORY_SPRINT -> Content.Sprint(sprintCategory(random))

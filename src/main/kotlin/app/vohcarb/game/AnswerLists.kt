@@ -34,7 +34,11 @@ class AnswerLists(private val jdbc: NamedParameterJdbcTemplate) {
      * Catalog words in a category, with their level (null = unranked), among [lemmas]. Sensitive words never count.
      * Catalog lemmas are single lower-case words, so a normalized answer is a lemma.
      */
-    fun wordsInCategory(category: String, lemmas: Collection<String>): Map<String, Int?> {
+    fun wordsInCategory(category: String, lemmas: Collection<String>): Map<String, Int?> =
+        wordsInCategories(listOf(category), lemmas)
+
+    /** Like [wordsInCategory], for words in any of [categories]. */
+    fun wordsInCategories(categories: Collection<String>, lemmas: Collection<String>): Map<String, Int?> {
         val keys = lemmas.filter { it.isNotEmpty() }.toSet()
         if (keys.isEmpty()) return emptyMap()
         val result = HashMap<String, Int?>()
@@ -43,9 +47,9 @@ class AnswerLists(private val jdbc: NamedParameterJdbcTemplate) {
             SELECT DISTINCT w.lemma, w.difficulty FROM word w
             JOIN word_category wc ON wc.word_id = w.id
             JOIN category c ON c.id = wc.category_id
-            WHERE c.slug = :category AND w.lemma IN (:lemmas) AND w.is_sensitive = FALSE
+            WHERE c.slug IN (:categories) AND w.lemma IN (:lemmas) AND w.is_sensitive = FALSE
             """.trimIndent(),
-            mapOf("category" to category, "lemmas" to keys),
+            mapOf("categories" to categories.toSet(), "lemmas" to keys),
         ) { rs -> result[rs.getString(1)] = rs.getObject(2)?.let { (it as Number).toInt() } }
         return result
     }
@@ -53,7 +57,9 @@ class AnswerLists(private val jdbc: NamedParameterJdbcTemplate) {
     companion object {
         /** Catalog categories that check Animal and Thing answers. */
         const val ANIMALS = "animals"
-        const val THINGS = "objects"
+
+        /** A Thing is an object, food or drink, or a material (banana, rice, wood, gold all count). */
+        val THINGS = listOf("objects", "food", "substances")
     }
 }
 
