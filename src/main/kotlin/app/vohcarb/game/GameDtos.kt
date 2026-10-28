@@ -19,6 +19,8 @@ data class DailyChallengeDto(
     val status: PlayStatus,
     /** Once done; Name-Place-Animal-Thing scores can still change as others play and vote. */
     val score: Int?,
+    /** Your play, once started: for its result. */
+    val playId: Long?,
 )
 
 enum class PlayStatus { NOT_STARTED, IN_PROGRESS, DONE }

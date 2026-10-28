@@ -46,7 +46,7 @@ class DailyGameService(
             val score = if (status == PlayStatus.DONE) board(challenge, date, scope).totals[play!!.id] ?: 0 else null
             DailyChallengeDto(
                 challenge, challenge.game, challenge.hint, challenge.title, challenge.description,
-                challenge.timeLimitSeconds, status, score,
+                challenge.timeLimitSeconds, status, score, play?.id,
             )
         }
         return DailyOverviewDto(date, groupId, challenges)
