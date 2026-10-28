@@ -119,7 +119,8 @@ On Windows, run these in Git Bash or WSL, or replace `$PWD` with `%cd%` in cmd.
 
 Not done yet, roughly in order:
 
-1. **Games**: the app's live-play screens (G4); see [games.md](games.md). **Run V10 and V11 against MariaDB once.**
+1. **Games**: built (G1–G4); see [games.md](games.md). V1–V11 were checked on MariaDB 11.4 on 2026-10-28 (migrations,
+   full import, every games query, group votes and deletes, a live match saving its result).
    The app itself is in `github.com/Tomiloba21/vohcarb-app` (feed, offline sync, practice, groups, widget, daily
    games, themes).
    Caddy proxies WebSockets without extra configuration, so `/ws/games/...` works behind it as is.
